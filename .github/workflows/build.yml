@@ -44,9 +44,9 @@ jobs:
           curl -LSs "https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/+archive/refs/tags/android-12.1.0_r27.tar.gz" | tar -C gcc-32 -zxvf -
           echo "$PWD/toolchain/llvm/bin" >> $GITHUB_PATH
 
-      - name: Setup KernelSU-Next
+      - name: Setup KernelSU
         run: |
-          curl -LSs "https://raw.githubusercontent.com/rifsxd/KernelSU-Next/next/kernel/setup.sh" | bash -s v3.2.0-legacy
+          curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -
 
       - name: Configure defconfig
         run: |
