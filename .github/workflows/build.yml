@@ -15,7 +15,6 @@ env:
   KERNEL_CONFIG: alioth_stock-defconfig
   ARCH: arm64
   KERNEL_IMAGE_NAME: Image.gz-dtb
-  CLANG_VERSION: r530567
 
 jobs:
   build:
@@ -28,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ccache automake flex lzop bison gperf build-essential zip curl zlib1g-dev g++-multilib libxml2-utils bzip2 libbz2-dev libbz2-1.0 squashfs-tools pngcrush schedtool dpkg-dev liblz4-tool make optipng maven libssl-dev pwgen libswitch-perl policycoreutils minicom libxml-sax-base-perl libxml-simple-perl bc libc6-dev-i386 lib32ncurses5-dev libx11-dev lib32z-dev libgl1-mesa-dev xsltproc unzip device-tree-compiler python2 python3
+          sudo apt-get install -y ccache automake flex lzop bison gperf build-essential zip curl zlib1g-dev g++-multilib libxml2-utils bzip2 libbz2-dev squashfs-tools pngcrush schedtool dpkg-dev liblz4-tool make optipng maven libssl-dev pwgen libswitch-perl policycoreutils minicom libxml-sax-base-perl libxml-simple-perl bc libc6-dev-i386 lib32ncurses5-dev libx11-dev lib32z-dev libgl1-mesa-dev xsltproc unzip device-tree-compiler python3
 
       - name: Set swap
         uses: pierotofy/set-swap-space@master
@@ -41,17 +40,14 @@ jobs:
           key: build-alioth
           max-size: 2G
 
-      - name: Download clang
+      - name: Download toolchain
         run: |
-          mkdir -p clang-aosp
-          curl -LSs "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android-15-release/clang-${CLANG_VERSION}.tar.gz" | tar -C clang-aosp -zxvf -
-          echo "$PWD/clang-aosp/bin" >> $GITHUB_PATH
-
-      - name: Download GCC
-        run: |
-          mkdir -p gcc-64 && mkdir -p gcc-32
+          git clone https://gitlab.com/ThankYouMario/android_prebuilts_clang-standalone.git --depth 1 toolchain/llvm
+          mkdir -p gcc-64
           curl -LSs "https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/tags/android-12.1.0_r27.tar.gz" | tar -C gcc-64 -zxvf -
+          mkdir -p gcc-32
           curl -LSs "https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/+archive/refs/tags/android-12.1.0_r27.tar.gz" | tar -C gcc-32 -zxvf -
+          echo "$PWD/toolchain/llvm/bin" >> $GITHUB_PATH
 
       - name: Setup KernelSU-Next
         run: |
@@ -61,7 +57,7 @@ jobs:
       - name: Setup SUSFS
         run: |
           git clone --recursive https://gitlab.com/simonpunk/susfs4ksu.git -b kernel-4.19 susfs4ksu --depth=1
-          cp susfs4ksu/kernel_patches/KernelSU-Next/10_enable_susfs_for_ksu.patch KernelSU-Next/
+          cp susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch KernelSU-Next/
           cp susfs4ksu/kernel_patches/50_add_susfs_in_kernel-4.19.patch ./
           cp susfs4ksu/kernel_patches/fs/* fs/
           cp susfs4ksu/kernel_patches/include/linux/* include/linux/
