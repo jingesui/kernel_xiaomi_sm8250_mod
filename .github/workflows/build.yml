@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       ksu_tag:
-        description: KernelSU tag/branch
-        required: true
-        default: v3.1.0-legacy-susfs
+        description: KernelSU tag
+        required: false
+        default: ""
   push:
     tags:
       - 'C-*'
@@ -49,27 +49,28 @@ jobs:
           curl -LSs "https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/+archive/refs/tags/android-12.1.0_r27.tar.gz" | tar -C gcc-32 -zxvf -
           echo "$PWD/toolchain/llvm/bin" >> $GITHUB_PATH
 
-      - name: Setup KernelSU-Next
+      - name: Setup KernelSU
         run: |
-          TAG="${{ github.event.inputs.ksu_tag || 'v3.1.0-legacy-susfs' }}"
-          curl -LSs "https://raw.githubusercontent.com/rifsxd/KernelSU-Next/next/kernel/setup.sh" | bash -s "$TAG"
+          TAG="${{ github.event.inputs.ksu_tag }}"
+          if [ -z "$TAG" ]; then
+            curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash
+          else
+            curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s "$TAG"
+          fi
 
       - name: Setup SUSFS
         run: |
           git clone --recursive https://gitlab.com/simonpunk/susfs4ksu.git -b kernel-4.19 susfs4ksu --depth=1
-          cp susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch KernelSU-Next/
+          cp susfs4ksu/kernel_patches/KernelSU/10_enable_susfs_for_ksu.patch KernelSU/
           cp susfs4ksu/kernel_patches/50_add_susfs_in_kernel-4.19.patch ./
           cp susfs4ksu/kernel_patches/fs/* fs/
           cp susfs4ksu/kernel_patches/include/linux/* include/linux/
-          cd KernelSU-Next && patch -p1 < 10_enable_susfs_for_ksu.patch && cd ..
+          cd KernelSU && patch -p1 < 10_enable_susfs_for_ksu.patch && cd ..
           patch -p1 < 50_add_susfs_in_kernel-4.19.patch
 
       - name: Configure defconfig
         run: |
-          # KernelSU
-          echo "CONFIG_KSU=y" >> arch/arm64/configs/$KERNEL_CONFIG
-          echo "CONFIG_KSU_CMDLINE=1" >> arch/arm64/configs/$KERNEL_CONFIG
-          # KPROBES
+          # KPROBES (needed for non-GKI KernelSU)
           echo "CONFIG_MODULES=y" >> arch/arm64/configs/$KERNEL_CONFIG
           echo "CONFIG_KPROBES=y" >> arch/arm64/configs/$KERNEL_CONFIG
           echo "CONFIG_HAVE_KPROBES=y" >> arch/arm64/configs/$KERNEL_CONFIG
