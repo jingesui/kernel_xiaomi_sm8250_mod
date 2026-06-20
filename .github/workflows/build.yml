@@ -12,7 +12,7 @@ on:
       - 'C-*'
 
 env:
-  KERNEL_CONFIG: alioth_defconfig
+  KERNEL_CONFIG: alioth_stock-defconfig
   ARCH: arm64
   KERNEL_IMAGE_NAME: Image.gz-dtb
   CLANG_VERSION: r530567
