@@ -7,7 +7,7 @@ on:
       - 'C-*'
 
 env:
-  KERNEL_CONFIG: alioth_stock-defconfig
+  KERNEL_CONFIG: alioth_defconfig
   ARCH: arm64
   KERNEL_IMAGE_NAME: Image.gz-dtb
 
@@ -50,24 +50,20 @@ jobs:
 
       - name: Setup SUSFS
         run: |
-          # Clone SUSFS from gitlab
           git clone --recursive https://gitlab.com/simonpunk/susfs4ksu.git -b kernel-4.19 susfs4ksu --depth=1
-          # Copy SUSFS source files to kernel
           cp susfs4ksu/kernel_patches/fs/* fs/
           cp susfs4ksu/kernel_patches/include/linux/* include/linux/
-          # Copy SUSFS kernel patch
           cp susfs4ksu/kernel_patches/50_add_susfs_in_kernel-4.19.patch ./
-          # Apply KSU-Next specific SUSFS patch INSIDE KernelSU-Next directory
           cd KernelSU-Next && patch -p1 < ../patches/susfs-patch-kernelsu-next.patch && cd ..
-          # Apply SUSFS kernel patch at kernel source root
           patch --batch -p1 < 50_add_susfs_in_kernel-4.19.patch || true
-          # Apply post-patch fix at kernel source root
           if [ -f patches/after_patch_fix.patch ]; then
             patch -p1 < patches/after_patch_fix.patch
           fi
 
       - name: Configure defconfig
         run: |
+          # MIUI/HyperOS hardware support
+          echo "CONFIG_MIHW=y" >> arch/arm64/configs/$KERNEL_CONFIG
           # KPROBES (needed for non-GKI KernelSU)
           echo "CONFIG_MODULES=y" >> arch/arm64/configs/$KERNEL_CONFIG
           echo "CONFIG_KPROBES=y" >> arch/arm64/configs/$KERNEL_CONFIG
